@@ -19,7 +19,9 @@ def main():
   resp = requests.post(base_url + "register_function",
                       json={"name": "test",
                       "payload": serialize(function)})
-  print(resp)
+  print(resp.json()['function_id'])
+
+
   fn_info = resp.json()
   resp = requests.post(base_url + "execute_function",
                          json={"function_id": fn_info['function_id'],
@@ -27,6 +29,7 @@ def main():
   print(resp)
 
   task_id = resp.json()["task_id"]
+  print(task_id)
 
   resp = requests.get(f"{base_url}status/{task_id}")
   print(resp.json())
