@@ -3,3 +3,4 @@ zmq==0.0.0
 redis==5.0.1
 uvicorn==0.24.0.post1
 dill==0.3.7
+requests==2.31.0

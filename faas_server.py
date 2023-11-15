@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi import HTTPException
 from pydantic import BaseModel
 from redis import StrictRedis
+from model import TaskInfo
 
 # python3 -m uvicorn faas_server:app --reload
 class RegisterFn(BaseModel):
@@ -27,12 +28,6 @@ class TaskStatusRep(BaseModel):
 
 class TaskResultRep(BaseModel):
     task_id: uuid.UUID
-    status: str
-    result: str
-
-class TaskInfo(BaseModel):
-    fn_payload : str
-    param_payload: str 
     status: str
     result: str
 
