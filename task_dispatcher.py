@@ -11,7 +11,7 @@ redis_conn = redis.StrictRedis(host='localhost', port=6379, password='garen', db
 def main():
   args = parse_args()
 
-  if args.mode != "local" or args.mode != "push":
+  if args.mode != "local" and args.mode != "push":
     print(f"TODO: Implement {args.mode} mode")
     exit(1)
 

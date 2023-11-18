@@ -22,31 +22,26 @@ def push_worker(count, task_queue, result_queue):
   
   router.identity = b"Router1"
   router.bind("tcp://127.0.0.1:5555")
-  woe = [b"WORKER1", b"WORKER2", b"ROUTER3"]
   available_workers = set()  
   while True:
     try:
       message = router.recv_multipart(flags=zmq.NOBLOCK)
       if message[2] == b"REGISTER":
-        worker_id = str(message[0])
+        worker_id = message[0]
         # print(worker_id)
         available_workers.add(worker_id)
       else:
-        if len(message) == 3:
-          result_queue.put(Task(**json.loads(message[2])))
-        else:
-          result_queue.put(Task(**json.loads(message[3])))
+        print(message)
+        result_queue.put(Task(**json.loads(message[2])))
     except Exception:
       pass
 
     try:
-      #TODO: add fault tolerance when kill a worker
       if available_workers:
         task = task_queue.get(block=False) 
-        router.send_multipart([random.choice(woe), b"", json.dumps(task.dict()).encode()])
-      else:
-        pass
-        # print("Workers are unavaliable.")
+        router.send_multipart([random.choice(list(available_workers)), b"", json.dumps(task.dict()).encode()])
+      else: 
+        print("Workers are unavaliable.")
     except Exception:
       pass
       # print("Queue is empty. Waiting for tasks...")

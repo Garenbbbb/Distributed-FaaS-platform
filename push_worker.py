@@ -4,11 +4,12 @@ import zmq
 import json
 from model import Task
 from concurrent.futures import ThreadPoolExecutor
-from worker_pool import execute_task
-
+from worker_pool import execute_task, new_worker_pool
 
 def main(num, url, name):
-  
+
+  t, task_queue, result_queue = new_worker_pool(num, "local")
+
   context = zmq.Context()
   router = context.socket(zmq.DEALER)
   router.identity = b"WORKER" + name.encode()
@@ -21,21 +22,28 @@ def main(num, url, name):
   while True:
     if poller.poll(1000): 
       response = router.recv_multipart()
-      print(response[1])
       task = Task(**json.loads(response[1]))
+      print(task)
+      # Process pool
+      # task_queue.put(task)
+
+      # Thread Pool
       future = executor.submit(execute_task, task)
       # Callback to send the result back to the dispatcher
       future.add_done_callback(lambda f: router.send_multipart([router.identity, json.dumps(f.result().dict()).encode()]))
     else:
-      pass
-      # print("router did not receive a response within the timeout.") 
-    # Send the response back to the dispatcher
-    router.send_multipart([router.identity, b"REGISTER"])
+      #Process pool
+      # try:
+      #   result = result_queue.get(block=False)
+      #   router.send_multipart([router.identity, json.dumps(result.dict()).encode()])
+      # except Exception:
+      router.send_multipart([router.identity, b"REGISTER"])
+   
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   
-  parser.add_argument('-n', '--number', type=int, default=2)
+  parser.add_argument('-n', '--number', type=int, default=3)
   parser.add_argument('-u', '--url', type=str, default="tcp://127.0.0.1:5555")
   parser.add_argument('-k', '--name', type=str, default="0")
   args = parser.parse_args()

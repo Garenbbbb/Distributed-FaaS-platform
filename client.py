@@ -26,7 +26,7 @@ def main():
   results, _ = await_results([task_id], 0.1)
   print_results(results)
 
-  parallel_feed_tasks(fn_id, (2,), 4)
+  parallel_feed_tasks(fn_id, (2,), 20)
   # parallel_test(sleep_fn, (10,5), 10)
 
 
