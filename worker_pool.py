@@ -6,8 +6,36 @@ import time
 from threading import Thread
 from model import Task
 from util import deserialize, serialize
+from config import task_dispatcher_url
 
+class WorkerManger():
+  def __init__(self, heartbeat_threshold):
+    self.workers = {}
+    self.workerLoad = {}
+    self.heartbeat_threshold = heartbeat_threshold
+    # one thread to check_worker_status
 
+  def receive_heartbeat(self, worker_id, work_load):
+    self.workers[worker_id] = time.time()
+    self.workerLoad[worker_id] = work_load
+  
+  def select_worker(self):
+    if len(self.workers) > 0:
+      return min(self.workerLoad, key=self.workerLoad.get)
+    else:
+      return None
+  
+  def worker_avaliable(self):
+
+    return len(self.workers) > 0, self.select_worker()
+
+  def check_worker_status(self):
+    current_time = time.time()
+    for worker_id, last_heartbeat_time in self.workers.items():
+      time_since_last_heartbeat = current_time - last_heartbeat_time
+      if time_since_last_heartbeat > self.heartbeat_threshold:   
+        del self.workers[worker_id]   
+        del self.workerLoad[worker_id]
 
 def spawn_workers(count: int, task_queue: Queue, result_queue: Queue):
   cb = lambda task:result_queue.put(task)
@@ -19,32 +47,31 @@ def spawn_workers(count: int, task_queue: Queue, result_queue: Queue):
 def push_worker(count, task_queue, result_queue):
   context = zmq.Context()
   router = context.socket(zmq.ROUTER)
+  router.identity = b"Router"
+  router.bind(task_dispatcher_url)
   
-  router.identity = b"Router1"
-  router.bind("tcp://127.0.0.1:5555")
-  available_workers = set()  
+  available_workers = WorkerManger(2)  
   while True:
     try:
       message = router.recv_multipart(flags=zmq.NOBLOCK)
+      print(message)
       if message[2] == b"REGISTER":
-        worker_id = message[0]
-        # print(worker_id)
-        available_workers.add(worker_id)
+        available_workers.receive_heartbeat(message[0], message[3])
       else:
-        print(message)
         result_queue.put(Task(**json.loads(message[2])))
     except Exception:
       pass
-
     try:
-      if available_workers:
+      flag, worker = available_workers.worker_avaliable()
+      if flag:
         task = task_queue.get(block=False) 
-        router.send_multipart([random.choice(list(available_workers)), b"", json.dumps(task.dict()).encode()])
+        router.send_multipart([worker, b"", json.dumps(task.dict()).encode()])
       else: 
         print("Workers are unavaliable.")
+        pass
     except Exception:
-      pass
       # print("Queue is empty. Waiting for tasks...")
+      pass
 
 WORK_DIR = {"local": spawn_workers, "push": push_worker}
 

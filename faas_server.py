@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 from redis import StrictRedis
 from model import TaskInfo
+from config import redis_url, redis_port, redis_password, redis_db, redis_topic, redis_fail
 
 # python3 -m uvicorn faas_server:app --reload
 class RegisterFn(BaseModel):
@@ -33,7 +34,7 @@ class TaskResultRep(BaseModel):
 
 
 app = FastAPI()
-redis_conn = redis.StrictRedis(host='localhost', port=6379, password='garen', db=0)
+redis_conn = redis.StrictRedis(host=redis_url, port=redis_port, password=redis_password, db=redis_db)
 
 
 
@@ -79,7 +80,9 @@ async def execute(input : ExecuteFnReq):
         info = TaskInfo(fn_payload=function['payload'], param_payload=input.payload,
                  status="QUEUED", result='')
         redis_conn.set(str(task_id), json.dumps(info.dict()))
-        redis_conn.publish('Tasks', str(task_id))
+        # A copy of task id needed to be processed
+        redis_conn.sadd(redis_fail,str(task_id))
+        redis_conn.publish(redis_topic, str(task_id))
         return {"task_id": task_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to execute function {e}")

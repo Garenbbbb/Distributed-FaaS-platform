@@ -17,33 +17,36 @@ def main(num, url, name):
   router.connect(url)
   poller = zmq.Poller()
   poller.register(router, zmq.POLLIN)
-  executor = ThreadPoolExecutor(max_workers=num)
+  # executor = ThreadPoolExecutor(max_workers=num)
+  taskCnt = 0.0
 
   while True:
     if poller.poll(1000): 
       response = router.recv_multipart()
       task = Task(**json.loads(response[1]))
-      print(task)
       # Process pool
-      # task_queue.put(task)
-
+      task_queue.put(task)
+      taskCnt+=1
       # Thread Pool
-      future = executor.submit(execute_task, task)
-      # Callback to send the result back to the dispatcher
-      future.add_done_callback(lambda f: router.send_multipart([router.identity, json.dumps(f.result().dict()).encode()]))
+      # future = executor.submit(execute_task, task)
+      # # Callback to send the result back to the dispatcher
+      # future.add_done_callback(lambda f: router.send_multipart([router.identity, json.dumps(f.result().dict()).encode()]))
     else:
       #Process pool
-      # try:
-      #   result = result_queue.get(block=False)
-      #   router.send_multipart([router.identity, json.dumps(result.dict()).encode()])
-      # except Exception:
-      router.send_multipart([router.identity, b"REGISTER"])
+      try:
+        result = result_queue.get(block=False)
+        taskCnt-=1
+        router.send_multipart([router.identity, json.dumps(result.dict()).encode()])
+      except Exception:
+        pass
+    print(taskCnt/num)
+    router.send_multipart([router.identity, b"REGISTER", str(taskCnt/num).encode()])
    
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   
-  parser.add_argument('-n', '--number', type=int, default=3)
+  parser.add_argument('-n', '--number', type=int, default=2)
   parser.add_argument('-u', '--url', type=str, default="tcp://127.0.0.1:5555")
   parser.add_argument('-k', '--name', type=str, default="0")
   args = parser.parse_args()

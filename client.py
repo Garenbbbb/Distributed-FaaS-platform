@@ -3,12 +3,14 @@ from util import serialize, deserialize
 import time
 import multiprocessing
 from threading import Thread
+import dill
 
 base_url = "http://127.0.0.1:8000/"
 
 
 def function(x):
   return x * 2
+
 
 def sleep_fn(s: int, val: int):
   i = 0
@@ -26,8 +28,8 @@ def main():
   results, _ = await_results([task_id], 0.1)
   print_results(results)
 
-  parallel_feed_tasks(fn_id, (2,), 20)
-  # parallel_test(sleep_fn, (10,5), 10)
+  # parallel_feed_tasks(fn_id, (2,), 1)
+  parallel_test(sleep_fn, (10,5), 10)
 
 
 def parallel_execute(fn_id, args, shared_counter):
@@ -39,6 +41,7 @@ def parallel_execute(fn_id, args, shared_counter):
       with shared_counter.get_lock():
         shared_counter.value += 1
         return
+    time.sleep(1)
   
 # Test to simulate nums of tasks coming in at the same time
 def parallel_feed_tasks(fn_id, args, tasks):
@@ -86,7 +89,6 @@ def parallel_test(fn, args, count: int):
   print("speedup (d_s*c/d_p):", duration*count / par_duration)
   # print_results(par_results)
   print("\n\n")
-
 
 def register_fn(fn) -> str:
   resp = requests.post(base_url + "register_function",
