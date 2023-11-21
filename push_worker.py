@@ -19,14 +19,14 @@ def main(num, url, name):
   poller.register(router, zmq.POLLIN)
   # executor = ThreadPoolExecutor(max_workers=num)
   taskCnt = 0.0
-
   while True:
     if poller.poll(1000): 
       response = router.recv_multipart()
       task = Task(**json.loads(response[1]))
       # Process pool
       task_queue.put(task)
-      taskCnt+=1
+
+      taskCnt += 1
       # Thread Pool
       # future = executor.submit(execute_task, task)
       # # Callback to send the result back to the dispatcher
@@ -35,11 +35,10 @@ def main(num, url, name):
       #Process pool
       try:
         result = result_queue.get(block=False)
-        taskCnt-=1
+        taskCnt -= 1
         router.send_multipart([router.identity, json.dumps(result.dict()).encode()])
       except Exception:
         pass
-    print(taskCnt/num)
     router.send_multipart([router.identity, b"REGISTER", str(taskCnt/num).encode()])
    
 
