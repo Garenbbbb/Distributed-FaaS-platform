@@ -4,19 +4,28 @@ import argparse
 from multiprocessing import Queue
 from threading import Thread
 from model import Task, TaskInfo
-from worker_pool import new_worker_pool
+from util import new_task_handler
 from config import redis_url, redis_port, redis_password, redis_db, redis_topic, redis_fail
+from local_worker import local_worker
+from push_worker_router import push_worker_router
+from pull_worker_router import pull_worker_router
 
 redis_conn = redis.StrictRedis(host=redis_url, port=redis_port, password=redis_password, db=redis_db)
 
 def main():
   args = parse_args()
 
-  if args.mode != "local" and args.mode != "push":
+  if args.mode == "local":
+    hooks = new_task_handler(local_worker, num_processes=args.workers)
+  elif args.mode == "push":
+    hooks = new_task_handler(push_worker_router)
+  elif args.mode == "pull":
+    hooks = new_task_handler(pull_worker_router)
+  else:
     print(f"TODO: Implement {args.mode} mode")
     exit(1)
 
-  t, task_queue, result_queue = new_worker_pool(args.workers, args.mode)
+  t, task_queue, result_queue = hooks
 
   #get failed tasks from redis
   failedTask = recover_tasks()

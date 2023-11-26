@@ -3,16 +3,18 @@ import argparse
 import zmq
 import json
 from model import Task
-from concurrent.futures import ThreadPoolExecutor
-from worker_pool import execute_task, new_worker_pool
+from util import new_task_handler
+from local_worker import local_worker
 
 def main(num, url, name):
 
-  t, task_queue, result_queue = new_worker_pool(num, "local")
+  t, task_queue, result_queue = new_task_handler(local_worker, num_processes=num)
 
   context = zmq.Context()
   router = context.socket(zmq.DEALER)
   router.identity = b"WORKER" + name.encode()
+  # Should we maybe use this?
+  # router.setsockopt(zmq.IDENTITY, b"WORKER" + name.encode())
   print(router.identity)
   router.connect(url)
   poller = zmq.Poller()
