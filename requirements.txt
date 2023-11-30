@@ -4,3 +4,5 @@ redis==5.0.1
 uvicorn==0.24.0.post1
 dill==0.3.7
 requests==2.31.0
+pytest==7.4.3
+numpy==1.24.4
