@@ -8,7 +8,7 @@ from lib.tasks import new_task_handler
 from lib.local_worker import local_worker
 from lib.config import redis_url, redis_port, redis_password, redis_db, redis_topic, redis_fail
 from lib.push_worker_router import push_worker_router
-from lib.pull_worker_router import pull_worker_router
+from lib.pull_worker_handler import pull_worker_handler
 
 redis_conn = redis.StrictRedis(host=redis_url, port=redis_port, password=redis_password, db=redis_db)
 
@@ -20,7 +20,7 @@ def main():
   elif args.mode == "push":
     hooks = new_task_handler(push_worker_router)
   elif args.mode == "pull":
-    hooks = new_task_handler(pull_worker_router)
+    hooks = new_task_handler(pull_worker_handler)
   else:
     print(f"TODO: Implement {args.mode} mode")
     exit(1)

@@ -30,4 +30,4 @@ pip install -r requirements.txt
 (cd util && pip install .)
 (cd tests && pip install .)
 
-chmod +x ./start.sh ./stop.sh
+chmod +x ./start.sh ./stop.sh ./test.sh ./kill.sh

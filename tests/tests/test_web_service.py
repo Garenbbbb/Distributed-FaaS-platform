@@ -60,7 +60,7 @@ def test_roundtrip():
 
     task_id = resp.json()["task_id"]
 
-    for i in range(20):
+    while True:
 
         resp = requests.get(f"{base_url}result/{task_id}")
 
@@ -72,5 +72,7 @@ def test_roundtrip():
             logging.warning(s_result)
             result = deserialize(s_result['result'])
             assert result == number*2
-            break
+            return
         time.sleep(0.01)
+    # # Response not received in a timely manner
+    # assert False

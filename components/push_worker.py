@@ -5,6 +5,8 @@ import json
 from lib.model import Task
 from lib.tasks import new_task_handler
 from lib.local_worker import local_worker
+import sys
+import uuid
 
 def main(num, url, name):
 
@@ -47,8 +49,16 @@ def main(num, url, name):
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   
-  parser.add_argument('-n', '--number', type=int, default=2)
-  parser.add_argument('-u', '--url', type=str, default="tcp://127.0.0.1:5555")
-  parser.add_argument('-k', '--name', type=str, default="0")
-  args = parser.parse_args()
-  main(args.number, args.url, args.name)
+  num_processes = int(sys.argv[1])
+  if len(sys.argv) > 2:
+    dispatcher_url = sys.argv[2]
+  else:
+    dispatcher_url = "tcp://127.0.0.1:5555"
+  name = str(uuid.uuid4())
+
+  # parser.add_argument('-n', '--number', type=int, default=2)
+  # parser.add_argument('-u', '--url', type=str, default="tcp://127.0.0.1:5555")
+  # parser.add_argument('-k', '--name', type=str, default="0")
+  # args = parser.parse_args()
+
+  main(num_processes, dispatcher_url, name)

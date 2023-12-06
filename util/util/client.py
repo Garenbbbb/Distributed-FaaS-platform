@@ -1,7 +1,6 @@
 import requests
 from requests.exceptions import HTTPError
 from .serialize import serialize, deserialize
-import time
 
 def err_result(base_str: str, e: Exception) -> (None, str):
   return None, f"{base_str}. {e.__class__.__name__}: {str(e)}"
@@ -49,34 +48,3 @@ def get_result(task_id: str) -> ("dict[str, any] | None", str):
   except Exception as e:
     return err_result(f"Failed to get result for task with id {task_id}", e)
   
-def await_results(task_ids: "list[str]", poll_interval: float) -> (list, int):
-  start = time.time()
-  results = []
-  while len(task_ids) > 0:
-    task_id = task_ids[-1]
-
-    status, err_msg = get_status(task_id)
-    if err_msg:
-      print(err_msg)
-      time.sleep(poll_interval)
-      continue
-
-    if status == "QUEUED":
-      time.sleep(poll_interval)
-      continue
-
-    result, err_msg = get_status(task_id)
-    if err_msg:
-      print(err_msg)
-      time.sleep(poll_interval)
-      continue
-
-    results.append((task_id, result))
-    task_ids.pop()
-
-  return results, time.time() - start
-
-def print_results(results: "list[(str, any)]"):
-  for result in results:
-    task_id, result_val = result
-    print(f"{task_id}: {result_val}")

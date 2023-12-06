@@ -95,12 +95,7 @@ echo "Logs available at: $TASK_DISPATCHER_LOG_FILE"
 if [[ $MODE != "local" ]]; then
   echo "Starting $MODE workers..."
   for ((i = 0; i < $((WORKERS)); i++)); do
-    WORKER_LOG_FILE="$LOG_DIR/$MODE$i"
-    if [[ $MODE == "push" ]]; then
-      python3 components/push_worker.py -n 2 -k $i > "$WORKER_LOG_FILE" 2>&1 &
-    elif [[ $MODE == "pull" ]]; then
-      python3 components/pull_worker.py -n 2 > "$WORKER_LOG_FILE" 2>&1 &
-    fi
+    python3 components/"$MODE"_worker.py 2 > "$LOG_DIR/$MODE$i" 2>&1 &
   done
   echo "Workers started"
 fi
